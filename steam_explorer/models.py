@@ -42,5 +42,6 @@ class Ownership(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     steamid: Mapped[str] = mapped_column(String(32), nullable=False)
     appid: Mapped[int] = mapped_column(Integer, nullable=False)
+    game_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     playtime_forever: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

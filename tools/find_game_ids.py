@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Find Steam game IDs by searching game names"""
 
+import sys
+import os
 import requests
 import json
 from typing import List, Dict
+
+# Add the project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
 def get_all_steam_apps() -> List[Dict]:
     """Fetch all Steam apps from the API"""
@@ -46,9 +52,9 @@ def main():
             print(f"ID: {app['appid']:>8} | Name: {app['name']}")
         
         print("-" * 60)
-        print("\nTo fetch data for these games, use:")
+        print("\nTo fetch data for these games, use option 2 in the main menu with:")
         app_ids = ",".join(str(app['appid']) for app in matches[:5])
-        print(f"python -m scripts.fetch_and_load --apps {app_ids}")
+        print(f"App IDs: {app_ids}")
         
     except Exception as e:
         print(f"Error: {e}")
