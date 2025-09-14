@@ -35,22 +35,40 @@ STEAM_USER_ID64=your_steam_id_64_here
 LOG_LEVEL=INFO
 ```
 
-4) **Initialize database:**
+4) **Run the Steam Manager:**
 ```bash
-python -m scripts.init_db
+python steam_manager.py
 ```
 
-5) **Fetch and load sample data:**
-```bash
-# Fetch specific games (Counter-Strike 2, Dota 2) + your owned games
-python -m scripts.fetch_and_load --apps 570,730 --owned --rps 2.0 --batch-size 50
+That's it! The Steam Manager provides an interactive menu to:
+- Initialize your database
+- Fetch your Steam games and data
+- Explore your gaming statistics
+- Manage your data pipeline
 
-# Or just fetch specific games without owned games
-python -m scripts.fetch_and_load --apps 570,730
+### Using the Steam Manager
 
-# Or just fetch your owned games
-python -m scripts.fetch_and_load --owned
-```
+The `steam_manager.py` provides a user-friendly interface with these options:
+
+**📊 DATA MANAGEMENT**
+- Initialize Database
+- Fetch Game Details (by App IDs)
+- Fetch Your Owned Games
+- Fetch All Missing Game Details
+
+**🔍 DATA EXPLORATION**
+- Database Explorer (Interactive)
+- View Data Summary
+- Find Game IDs by Name
+
+**🛠️ UTILITIES**
+- Test Database Connection
+- Create Database Views
+- Add Game Names to Ownerships Table
+
+**📖 HELP & INFO**
+- Show Project Structure
+- Show Configuration
 
 ### Configuration & Logging
 - Logging is centralized via `steam_explorer/logging_utils.py`. Control level via `LOG_LEVEL` env var (e.g., `DEBUG`, `INFO`).
@@ -58,10 +76,15 @@ python -m scripts.fetch_and_load --owned
   - `--rps`: requests per second rate limit (default 2.0).
   - `--batch-size`: chunk size for app details (default 50).
 
-### Data Model (initial)
+### Data Model
 - `games` (dim): `appid` (PK), `name`, `type`, `is_free`, timestamps.
 - `achievements_global` (fact): unique `(appid, name)`, `percent`, `created_at`.
-- `ownerships` (fact): unique `(steamid, appid)`, `playtime_forever`, `created_at`.
+- `ownerships` (fact): unique `(steamid, appid)`, `game_name`, `playtime_forever`, `created_at`.
+
+**Enhanced Features:**
+- Ownership records now include `game_name` for easier querying and Power BI integration
+- Automatic game name population during data fetching
+- MySQL compatibility improvements
 
 ### Validation & Quality Checks
 - ETL validates data before insert:
@@ -119,35 +142,85 @@ alembic upgrade head
 ```
 - Initial migration is provided at `alembic/versions/0001_initial.py` covering `games`, `achievements_global`, `ownerships`.
 
-### Must-have vs Optional
-- Must-have:
-  - Working ETL scripts (`init_db.py`, `fetch_and_load.py`).
-  - Config via env, logging, validation, retries/rate limits, batching.
-  - Clear README with run instructions.
-  - Tests skeleton with fixtures and basic coverage.
-  - Alembic config and initial migration.
-- Optional (portfolio-plus):
-  - Additional endpoints and models.
-  - Docker/compose for Postgres, CI (pytest + ruff/black), data docs.
+### Key Features
+
+**✅ Complete Data Pipeline:**
+- Steam API integration with rate limiting and error handling
+- ETL workflows with data validation and quality checks
+- Support for SQLite, MySQL, and PostgreSQL databases
+- Automatic game name resolution and data enrichment
+
+**✅ User-Friendly Interface:**
+- Interactive menu system via `steam_manager.py`
+- Beautiful data summaries with gaming insights
+- Database explorer for detailed data browsing
+- Command-line tools for advanced users
+
+**✅ Production Ready:**
+- Comprehensive error handling and logging
+- Database migrations with Alembic
+- Test suite with mocked API calls
+- Configurable via environment variables
+
+**✅ Analytics Ready:**
+- Power BI integration support
+- Optimized database schema for reporting
+- Game ownership and playtime tracking
+- Achievement completion statistics
 
 ### Project Structure
 ```
-steam_explorer/
-├── api/                    # Steam API client
-│   └── steam_client.py
-├── etl/                    # ETL pipeline logic
-│   └── pipeline.py
-├── models.py              # SQLAlchemy data models
-├── db.py                  # Database connection utilities
-├── config.py              # Configuration management
-└── logging_utils.py       # Centralized logging
+steam_data_explorer/
+├── steam_manager.py          # 🎮 Main interface - run this!
+├── .env                      # Configuration file
+├── requirements.txt          # Python dependencies
+├── README.md                 # Documentation
+│
+├── steam_explorer/           # Core application code
+│   ├── __init__.py
+│   ├── config.py            # Configuration management
+│   ├── db.py                # Database connections
+│   ├── models.py            # Data models (with game_name support)
+│   ├── logging_utils.py     # Logging utilities
+│   ├── api/
+│   │   └── steam_client.py  # Steam API client
+│   └── etl/
+│       └── pipeline.py      # Data transformation logic
+│
+├── tools/                   # Utility scripts (organized)
+│   ├── init_db.py          # Initialize database
+│   ├── fetch_games.py      # Fetch game data
+│   ├── database_explorer.py # Interactive data browser
+│   ├── find_game_ids.py    # Find Steam game IDs
+│   ├── view_data.py        # Data summary with insights
+│   ├── test_connection.py  # Database connection test
+│   ├── fetch_all_owned_games.py # Fetch all missing games
+│   └── ... (other utilities)
+│
+├── scripts/                 # Legacy scripts (for compatibility)
+├── alembic/                 # Database migrations
+└── tests/                   # Test suite
+```
 
-scripts/
-├── init_db.py            # Database initialization
-└── fetch_and_load.py     # Main ETL script
+### Advanced Usage
 
-alembic/                  # Database migrations
-tests/                    # Test suite
+**Command Line Interface (Alternative):**
+If you prefer command-line usage over the interactive menu:
+```bash
+# Initialize database
+python tools/init_db.py
+
+# Fetch specific games
+python tools/fetch_games.py --apps 570,730 --batch-size 1
+
+# Fetch your owned games
+python tools/fetch_games.py --owned
+
+# View data summary
+python tools/view_data.py
+
+# Interactive database explorer
+python tools/database_explorer.py
 ```
 
 ### Extending the Pipeline
@@ -162,18 +235,29 @@ tests/                    # Test suite
 
 3. **Add data transformations:**
    - Create transform functions in `steam_explorer/etl/pipeline.py`
-   - Wire into `scripts/fetch_and_load.py`
+   - Wire into `tools/fetch_games.py`
+
+4. **Add new utilities:**
+   - Create new scripts in `tools/` directory
+   - Add menu options to `steam_manager.py` if needed
 
 ### Troubleshooting
 
 **Common Issues:**
-- **API Rate Limits:** Reduce `--rps` value (default 2.0)
-- **Database Locked:** Ensure no other processes are using the database
-- **Missing API Key:** Verify `STEAM_API_KEY` is set in `.env`
+- **API Rate Limits:** Use the Steam Manager's built-in rate limiting or reduce `--rps` value
+- **Database Connection:** Use option 8 in Steam Manager to test your database connection
+- **Missing API Key:** Verify `STEAM_API_KEY` is set in `.env` (use option 12 to check configuration)
 - **Invalid Steam ID:** Use 64-bit Steam ID format
+- **Unknown Games:** Use option 4 in Steam Manager to fetch missing game details
+- **MySQL Syntax Errors:** The project now includes MySQL compatibility fixes
 
 **Getting Your Steam ID:**
 1. Visit [SteamID.io](https://steamid.io/)
 2. Enter your Steam profile URL
 3. Copy the "steamID64" value
+
+**Getting Help:**
+- Run `python steam_manager.py` and use option 11 for project structure
+- Use option 12 to view your current configuration
+- Check the interactive database explorer (option 5) for data insights
 
